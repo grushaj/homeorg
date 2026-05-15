@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Home Base">
+<meta name="theme-color" content="#F5F3EF">
+<title>Home Base</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F5F3EF;--card:#FFFFFF;--text:#1C1B18;--muted:#7B7970;--faint:#B3B1AA;
+  --border:rgba(0,0,0,0.07);--border-med:rgba(0,0,0,0.13);
+  --green:#2A7A5A;--green-bg:#E6F4EE;--green-mid:#3FA876;
+  --amber:#92600A;--amber-bg:#FEF3E2;
+  --red:#8B2828;--red-bg:#FDEAEA;
+  --blue:#1A5C9A;--blue-bg:#E8F1FB;
+  --r:14px;--rs:8px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100%;padding-bottom:72px}
+
+/* NAV */
+.nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--border);display:flex;z-index:100;padding-bottom:env(safe-area-inset-bottom,0px)}
+.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px 0 8px;cursor:pointer;border:none;background:none;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:10px;font-weight:500;letter-spacing:0.04em;gap:3px;transition:color 0.15s}
+.nav-btn svg{width:22px;height:22px;stroke:currentColor;stroke-width:1.6;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.nav-btn.active{color:var(--green)}
+
+/* HEADER */
+.header{background:var(--card);border-bottom:1px solid var(--border);padding:16px 16px 12px;position:sticky;top:0;z-index:50}
+.header-row{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:10px}
+.page-title{font-size:20px;font-weight:500;letter-spacing:-0.3px}
+.date-chip{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:0.04em}
+.tab-row{display:flex;gap:5px;overflow-x:auto;scrollbar-width:none;padding-bottom:1px;margin-bottom:6px}
+.tab-row:last-child{margin-bottom:0}
+.tab-row::-webkit-scrollbar{display:none}
+.tab-divider{height:1px;background:var(--border);margin:6px 0}
+.tab{flex-shrink:0;font-size:12px;font-weight:500;padding:5px 12px;border-radius:20px;border:1px solid var(--border-med);background:transparent;color:var(--muted);cursor:pointer;white-space:nowrap;transition:all 0.15s;font-family:'DM Sans',sans-serif}
+.tab.active{background:var(--text);color:#fff;border-color:var(--text)}
+.tab.kid{border-color:rgba(26,92,154,0.3);color:var(--blue)}
+.tab.kid.active{background:var(--blue);border-color:var(--blue);color:#fff}
+.tab.supplies{border-color:rgba(42,122,90,0.3);color:var(--green)}
+.tab.supplies.active{background:var(--green);border-color:var(--green);color:#fff}
+
+/* PAGES */
+.page{display:none;padding:12px 12px 0}
+.page.active{display:block}
+
+/* SECTION */
+.section{margin-bottom:14px}
+.sec-head{display:flex;align-items:center;justify-content:space-between;padding:0 4px;margin-bottom:6px}
+.sec-name{font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);flex:1}
+.sec-actions{display:flex;align-items:center;gap:6px}
+.sec-edit-btn{font-size:11px;font-weight:500;color:var(--muted);background:none;border:1px solid var(--border-med);border-radius:10px;padding:2px 8px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.15s}
+.sec-edit-btn.active{color:var(--amber);border-color:rgba(146,96,10,0.3);background:var(--amber-bg)}
+.sec-add-btn{font-size:18px;line-height:1;color:var(--faint);background:none;border:none;cursor:pointer;padding:0 2px;font-weight:300;transition:color 0.15s}
+.sec-add-btn:active{color:var(--muted)}
+.task-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
+
+/* TIMESTAMP TASK */
+.task-item{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--border);user-select:none;transition:background 0.1s;position:relative}
+.task-item:last-child{border-bottom:none}
+.task-item.tappable{cursor:pointer}
+.task-item.tappable:active{background:#F0F9F4}
+.task-item.tapped{background:#E6F4EE;transition:background 0s}
+.stale-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.stale-dot.fresh{background:var(--green-mid)}
+.stale-dot.ok{background:var(--faint)}
+.stale-dot.amber{background:#E8A020}
+.stale-dot.red{background:#C94040}
+.stale-dot.none{background:var(--border-med)}
+.task-left{display:flex;flex-direction:column;flex:1;min-width:0}
+.task-label{font-size:15px;color:var(--text);line-height:1.3}
+.task-ts{font-family:'DM Mono',monospace;font-size:10px;margin-top:3px}
+.ts-fresh{color:var(--green)}
+.ts-ok{color:var(--muted)}
+.ts-amber{color:var(--amber)}
+.ts-red{color:var(--red)}
+.ts-never{color:var(--faint);font-style:italic}
+
+/* EDIT MODE controls on task */
+.task-edit-controls{display:flex;align-items:center;gap:6px;flex-shrink:0}
+.task-rename-btn{width:30px;height:30px;border-radius:50%;border:1px solid var(--border-med);background:var(--bg);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0}
+.task-rename-btn svg{width:13px;height:13px;stroke:var(--muted);stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.task-delete-btn{width:30px;height:30px;border-radius:50%;border:1px solid rgba(139,40,40,0.2);background:var(--red-bg);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0}
+.task-delete-btn svg{width:13px;height:13px;stroke:var(--red);stroke-width:2;fill:none;stroke-linecap:round}
+
+/* INLINE RENAME */
+.rename-row{display:flex;align-items:center;gap:6px;padding:10px 14px;border-bottom:1px solid var(--border);background:#FAFAF8}
+.rename-row:last-child{border-bottom:none}
+.rename-input{flex:1;border:1px solid var(--border-med);border-radius:var(--rs);padding:8px 10px;font-size:15px;font-family:'DM Sans',sans-serif;color:var(--text);background:var(--card);outline:none}
+.rename-input:focus{border-color:var(--green)}
+.rename-save{font-size:13px;font-weight:500;color:var(--green);background:none;border:none;cursor:pointer;padding:4px 8px;font-family:'DM Sans',sans-serif;white-space:nowrap}
+.rename-cancel{font-size:13px;color:var(--muted);background:none;border:none;cursor:pointer;padding:4px 8px;font-family:'DM Sans',sans-serif}
+
+/* ADD ROW */
+.add-row{display:flex;align-items:center;gap:8px;padding:10px 14px;border-top:1px dashed var(--border-med);background:#FAFAF8}
+.add-input{flex:1;border:1px solid var(--border-med);border-radius:var(--rs);padding:8px 10px;font-size:15px;font-family:'DM Sans',sans-serif;color:var(--text);background:var(--card);outline:none}
+.add-input:focus{border-color:var(--green)}
+.add-save{font-size:13px;font-weight:500;color:var(--green);background:none;border:none;cursor:pointer;padding:4px 8px;font-family:'DM Sans',sans-serif;white-space:nowrap}
+.add-cancel{font-size:13px;color:var(--muted);background:none;border:none;cursor:pointer;padding:4px 8px;font-family:'DM Sans',sans-serif}
+
+/* KID TASKS */
+.kid-item{display:flex;align-items:center;gap:12px;padding:13px 14px;border-bottom:1px solid var(--border);user-select:none;cursor:pointer;transition:background 0.1s}
+.kid-item:last-child{border-bottom:none}
+.kid-item.tappable:active{background:#F0F6FD}
+.kid-check{width:22px;height:22px;border-radius:50%;border:1.5px solid var(--border-med);flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all 0.18s}
+.kid-item.completing .kid-check{background:var(--blue);border-color:var(--blue)}
+.kid-check svg{width:11px;height:11px;stroke:#fff;stroke-width:2.5;fill:none;opacity:0;transform:scale(0.4);transition:all 0.15s}
+.kid-item.completing .kid-check svg{opacity:1;transform:scale(1)}
+.kid-label{font-size:15px;color:var(--text);flex:1;line-height:1.3}
+.kid-item.completing .kid-label{color:var(--faint)}
+.kid-empty{text-align:center;padding:36px 20px;color:var(--muted)}
+.kid-empty-icon{font-size:32px;margin-bottom:8px}
+.kid-empty-text{font-size:15px}
+
+/* SETTINGS */
+.settings-group{margin-bottom:16px}
+.settings-group-title{font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);padding:0 4px;margin-bottom:6px}
+.settings-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
+.settings-row{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--border);cursor:pointer}
+.settings-row:last-child{border-bottom:none}
+.settings-row:active{background:#F7F6F2}
+.settings-label{font-size:15px;color:var(--text)}
+.settings-sub{font-size:12px;color:var(--muted);margin-top:2px}
+.settings-action{font-size:13px;color:var(--green);font-weight:500;flex-shrink:0;margin-left:12px}
+.danger-action{color:var(--red)}
+.danger-label{color:var(--red)}
+
+/* SHEET (bottom drawer) */
+.sheet-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.35);z-index:200;display:flex;align-items:flex-end;justify-content:center}
+.sheet-overlay.hidden{display:none}
+.sheet-box{background:var(--card);border-radius:20px 20px 0 0;padding:20px 16px 40px;width:100%;max-width:480px;max-height:80vh;overflow-y:auto}
+.sheet-title{font-size:13px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:16px;text-align:center}
+.sheet-btn{width:100%;padding:13px;border-radius:12px;border:none;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:500;cursor:pointer;margin-bottom:8px}
+.sheet-btn.primary{background:var(--green);color:#fff}
+.sheet-btn.danger{background:var(--red-bg);color:var(--red)}
+.sheet-btn.cancel{background:var(--bg);color:var(--muted)}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:300;display:flex;align-items:flex-end;justify-content:center}
+.modal-overlay.hidden{display:none}
+.modal-sheet{background:var(--card);border-radius:20px 20px 0 0;padding:22px 18px 40px;width:100%;max-width:480px}
+.modal-title{font-size:17px;font-weight:500;margin-bottom:6px}
+.modal-sub{font-size:14px;color:var(--muted);margin-bottom:18px;line-height:1.5}
+
+/* HISTORY in sheet */
+.hist-list{border:1px solid var(--border);border-radius:var(--rs);margin-bottom:12px;overflow:hidden;max-height:50vh;overflow-y:auto}
+.hist-item{padding:11px 14px;border-bottom:1px solid var(--border)}
+.hist-item:last-child{border-bottom:none}
+.hist-top{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+.hist-name{font-size:14px;color:var(--text);flex:1}
+.hist-date{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);flex-shrink:0}
+.hist-meta{font-size:11px;color:var(--faint);margin-top:2px}
+.restore-btn{font-size:12px;color:var(--blue);background:none;border:none;cursor:pointer;padding:2px 0;font-family:'DM Sans',sans-serif;margin-top:3px;display:block}
+
+.version-note{text-align:center;font-size:11px;color:var(--faint);font-family:'DM Mono',monospace;margin:16px 0 8px}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <button class="nav-btn active" id="navToday" onclick="showPage('today')">
+    <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+    TODAY
+  </button>
+  <button class="nav-btn" id="navSettings" onclick="showPage('settings')">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    SETTINGS
+  </button>
+</nav>
+
+<div class="header" id="mainHeader">
+  <div class="header-row">
+    <span class="page-title">Home Base</span>
+    <span class="date-chip" id="dateLabel"></span>
+  </div>
+  <div class="tab-row" id="tabRow1"></div>
+  <div class="tab-divider"></div>
+  <div class="tab-row" id="tabRow2"></div>
+</div>
+
+<div class="page active" id="pageToday"></div>
+<div class="page" id="pageSettings"></div>
+
+<div class="sheet-overlay hidden" id="sheetOverlay">
+  <div class="sheet-box" id="sheetBox"></div>
+</div>
+<div class="modal-overlay hidden" id="modalOverlay">
+  <div class="modal-sheet" id="modalSheet"></div>
+</div>
+
+<script>
+// ── CONSTANTS ──
+const THRESHOLDS = {
+  daily:    {fresh:1,  amber:2,   red:3  },
+  weekly:   {fresh:7,  amber:10,  red:14 },
+  biweekly: {fresh:14, amber:18,  red:21 },
+  monthly:  {fresh:30, amber:40,  red:50 },
+  seasonal: {fresh:90, amber:120, red:150},
+  supplies:null, evelyn:null, nathan:null, dylan:null
+};
+const TAB_LABELS = {daily:'Daily',weekly:'Weekly',biweekly:'Biweekly',monthly:'Monthly',seasonal:'Seasonal',evelyn:'Evelyn',nathan:'Nathan',dylan:'Dylan',supplies:'Supplies'};
+const TAB_ROW1 = ['daily','weekly','biweekly','monthly','seasonal'];
+const TAB_ROW2 = ['evelyn','nathan','dylan','supplies'];
+const KID_TABS = ['evelyn','nathan','dylan'];
+const STORAGE_KEY = 'homebase_v4';
+
+// ── BASE TASKS ──
+const BASE = {
+  daily:[
+    {sec:'Common areas',tasks:['Wipe kitchen counters and stovetop','Wash or load dishes','Sweep kitchen floor','Quick living room tidy','Clear clutter from hallway']},
+    {sec:'Bathrooms',tasks:['Wipe sink and counter','Quick toilet wipe-down','Straighten towels']},
+    {sec:"Kids' rooms",tasks:["Collect laundry — boys' room","Collect laundry — teen's room",'Quick check; prompt kids if needed']},
+    {sec:'Pets',tasks:['Clean rat cage tray or spot-clean','Refresh rat water and food','Scoop cat litter box','Wipe up fur or tracked litter']}
+  ],
+  weekly:[
+    {sec:'Living room + hall',tasks:['Vacuum floors and rugs','Dust surfaces and shelves','Wipe light switches and door handles','Mop hall floor']},
+    {sec:'Kitchen',tasks:['Mop floor','Wipe appliance exteriors','Clean microwave interior','Wipe cabinet fronts','Empty and reline trash']},
+    {sec:'Bathrooms',tasks:['Scrub toilet bowl and seat','Clean sink and faucet','Wipe mirror','Scrub shower or tub','Mop or scrub floor','Replace hand towels']},
+    {sec:'Laundry',tasks:["Wash, dry, return household laundry","Wash kids' collected clothes",'Wash towels and bathroom linens']},
+    {sec:'Pets',tasks:['Full rat cage clean and bedding swap','Scrub rat bowls and water bottle','Wash cat food bowls','Vacuum pet hair from furniture']},
+    {sec:'Office',tasks:['Dust desk and surfaces','Vacuum or sweep floor','Wipe monitor and keyboard']},
+    {sec:"Kids' rooms",tasks:["Vacuum floors — boys' room","Vacuum floor — teen's room",'Check under beds for dishes or trash','Wipe doorknobs and light switches']}
+  ],
+  biweekly:[
+    {sec:'Bedrooms',tasks:["Wash bed linens — your room","Wash kids' bed linens",'Flip or rotate mattress pads']},
+    {sec:'Kitchen deeper',tasks:['Clean inside oven or run cycle','Wipe refrigerator shelves and door seals','Descale kettle or coffee maker']}
+  ],
+  monthly:[
+    {sec:'Whole house',tasks:['Dust ceiling fans and light fixtures','Wipe baseboards throughout','Clean window sills and tracks','Wash throw blankets and couch covers','Disinfect trash cans']},
+    {sec:'Bathrooms deep',tasks:['Scrub tile grout','Clean exhaust fan cover','Wash shower curtain or liner','Restock supplies (soap, TP, etc.)']},
+    {sec:'Pets deeper',tasks:['Disinfect full rat cage structure','Wash cat bedding or blanket','Replace litter box liner; scrub box']}
+  ],
+  seasonal:[
+    {sec:'Big tasks',tasks:['Wash windows inside and out','Deep clean behind and under appliances','Vacuum furniture cushions','Clean dryer vent and lint trap housing',"Rotate and declutter kids' clothes by size",'Steam clean carpets or rugs','Wipe all walls and doors for scuffs']}
+  ],
+  supplies:[
+    {sec:'Cleaning supplies',tasks:['Dish soap','Dishwasher pods','Hand soap (refills)','All-purpose spray','Bathroom cleaner','Toilet bowl cleaner','Glass / mirror cleaner','Floor cleaner / mop solution','Bleach','Scrubbing powder (Comet, etc.)','Magic Erasers','Paper towels','Trash bags — kitchen','Trash bags — bathroom / small','Rubber gloves']},
+    {sec:'Laundry',tasks:['Laundry detergent','Dryer sheets or wool balls','Stain remover spray','Fabric softener']},
+    {sec:'Tools and consumables',tasks:['Sponges','Scrub brushes','Microfiber cloths','Mop head (check / replace)','Vacuum bags or filters','Toilet brush (check / replace)']},
+    {sec:'Medical and first aid',tasks:['Bandages (assorted)','Gauze pads','Medical tape','Antiseptic wipes or spray','Antibiotic ointment','Hydrogen peroxide','Rubbing alcohol','Thermometer batteries','Pain reliever — adult',"Pain reliever — children's",'Allergy medication — adult',"Allergy medication — children's",'Cold / flu medicine','Antacids','Anti-diarrheal','Hydrocortisone cream','Tweezers (check condition)']},
+    {sec:'Feminine products',tasks:['Pads — regular','Pads — overnight','Tampons','Panty liners','Midol or similar']},
+    {sec:'Personal care',tasks:['Toothpaste','Toothbrushes (check / replace)','Floss','Mouthwash','Shampoo','Conditioner','Body wash / soap','Deodorant — adult','Deodorant — kids / teen','Razors','Shaving cream','Lotion','Sunscreen','Chapstick / lip balm']},
+    {sec:'Pet supplies',tasks:['Cat litter','Cat food — dry','Cat food — wet','Cat flea / tick prevention','Cat treats','Rat food / lab blocks','Rat bedding','Rat cage cleaning spray','Rat treats']},
+    {sec:'Batteries and household',tasks:['AA batteries','AAA batteries','9V batteries (smoke detectors)','Light bulbs (check for burned out)','Smoke detector test','CO detector test','Fire extinguisher check']}
+  ],
+  evelyn:[],nathan:[],dylan:[]
+};
+
+// ── STATE ──
+function uid(){return Math.random().toString(36).slice(2,10)}
+
+function defaultState(){
+  const s={activeTab:'daily',tasks:{},kidTasks:{},kidHistory:{},removedTasks:[]};
+  Object.keys(BASE).forEach(tab=>{
+    if(KID_TABS.includes(tab)){s.kidTasks[tab]=[];s.kidHistory[tab]=[];}
+    else{s.tasks[tab]=BASE[tab].map(sec=>({sec:sec.sec,items:sec.tasks.map(label=>({id:uid(),label,ts:null,isCustom:false}))}))}
+  });
+  return s;
+}
+
+function loadState(){
+  try{
+    const raw=localStorage.getItem(STORAGE_KEY);
+    if(!raw)return defaultState();
+    const s=JSON.parse(raw);
+    if(!s.removedTasks)s.removedTasks=[];
+    if(!s.kidHistory)s.kidHistory={evelyn:[],nathan:[],dylan:[]};
+    KID_TABS.forEach(k=>{if(!s.kidHistory[k])s.kidHistory[k]=[];if(!s.kidTasks[k])s.kidTasks[k]=[];});
+    return s;
+  }catch(e){return defaultState()}
+}
+
+function save(){localStorage.setItem(STORAGE_KEY,JSON.stringify(state))}
+
+let state=loadState();
+let activePage='today';
+let activeTab=state.activeTab||'daily';
+// editMode: {tab, secIdx} or null
+let editMode=null;
+// addMode: {tab, secIdx} or null  (-1 = kid tab)
+let addMode=null;
+// renameMode: {tab, secIdx, itemIdx} or null
+let renameMode=null;
+
+// ── PAGE SWITCHING ──
+function showPage(page){
+  activePage=page;
+  editMode=null;addMode=null;renameMode=null;
+  ['today','settings'].forEach(p=>{
+    document.getElementById('page'+cap(p)).classList.toggle('active',p===page);
+    document.getElementById('nav'+cap(p)).classList.toggle('active',p===page);
+  });
+  document.getElementById('mainHeader').style.display=page==='today'?'':'none';
+  if(page==='today')renderToday();
+  if(page==='settings')renderSettings();
+}
+function cap(s){return s.charAt(0).toUpperCase()+s.slice(1)}
+
+// ── STALENESS ──
+function staleClass(ts,tab){
+  const t=THRESHOLDS[tab];
+  if(!t)return'none';
+  if(!ts)return'ok';
+  const days=(Date.now()-ts)/86400000;
+  if(days<=t.fresh)return'fresh';
+  if(days<=t.amber)return'ok';
+  if(days<=t.red)return'amber';
+  return'red';
+}
+function tsLabel(ts){
+  if(!ts)return'Never done';
+  return'Last: '+new Date(ts).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+}
+function tsColorClass(ts,tab){
+  if(!ts)return'ts-never';
+  const sc=staleClass(ts,tab);
+  return{fresh:'ts-fresh',ok:'ts-ok',amber:'ts-amber',red:'ts-red',none:'ts-ok'}[sc]||'ts-ok';
+}
+
+// ── TODAY ──
+function renderToday(){
+  document.getElementById('dateLabel').textContent=new Date().toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'}).toUpperCase();
+  renderTabRows();
+  const area=document.getElementById('pageToday');
+  area.innerHTML='';
+  if(KID_TABS.includes(activeTab))renderKidTab(area);
+  else renderTimestampTab(area);
+}
+
+function renderTabRows(){
+  const r1=document.getElementById('tabRow1'),r2=document.getElementById('tabRow2');
+  r1.innerHTML='';r2.innerHTML='';
+  TAB_ROW1.forEach(t=>r1.appendChild(makeTabBtn(t,'')));
+  TAB_ROW2.forEach(t=>r2.appendChild(makeTabBtn(t,KID_TABS.includes(t)?'kid':'supplies')));
+}
+
+function makeTabBtn(tab,cls){
+  const b=document.createElement('button');
+  b.className='tab'+(cls?' '+cls:'')+(tab===activeTab?' active':'');
+  b.textContent=TAB_LABELS[tab];
+  b.onclick=()=>{activeTab=tab;state.activeTab=tab;editMode=null;addMode=null;renameMode=null;save();renderToday();};
+  return b;
+}
+
+// ── TIMESTAMP TAB ──
+function renderTimestampTab(area){
+  const sections=state.tasks[activeTab];
+  if(!sections)return;
+  sections.forEach((sec,si)=>{
+    const isEditing=editMode&&editMode.tab===activeTab&&editMode.secIdx===si;
+    const isAdding=addMode&&addMode.tab===activeTab&&addMode.secIdx===si;
+
+    const wrap=document.createElement('div');
+    wrap.className='section';
+
+    // section header
+    const head=document.createElement('div');
+    head.className='sec-head';
+    const name=document.createElement('span');
+    name.className='sec-name';
+    name.textContent=sec.sec;
+    const acts=document.createElement('div');
+    acts.className='sec-actions';
+
+    const editBtn=document.createElement('button');
+    editBtn.className='sec-edit-btn'+(isEditing?' active':'');
+    editBtn.textContent=isEditing?'Done editing':'Edit';
+    editBtn.onclick=()=>{
+      editMode=isEditing?null:{tab:activeTab,secIdx:si};
+      addMode=null;renameMode=null;
+      renderToday();
+    };
+
+    const addBtn=document.createElement('button');
+    addBtn.className='sec-add-btn';
+    addBtn.title='Add task';
+    addBtn.textContent='+';
+    addBtn.onclick=()=>{
+      addMode=isAdding?null:{tab:activeTab,secIdx:si};
+      editMode=null;renameMode=null;
+      renderToday();
+      setTimeout(()=>{const i=document.getElementById('addInp_'+si);if(i)i.focus();},60);
+    };
+
+    acts.appendChild(editBtn);
+    acts.appendChild(addBtn);
+    head.appendChild(name);
+    head.appendChild(acts);
+    wrap.appendChild(head);
+
+    const card=document.createElement('div');
+    card.className='task-card';
+
+    sec.items.forEach((item,ii)=>{
+      const isRenaming=renameMode&&renameMode.tab===activeTab&&renameMode.secIdx===si&&renameMode.itemIdx===ii;
+      if(isRenaming){
+        card.appendChild(makeRenameRow(item,activeTab,si,ii));
+      } else if(isEditing){
+        card.appendChild(makeEditModeRow(item,activeTab,si,ii));
+      } else {
+        card.appendChild(makeTimestampRow(item,activeTab,si,ii));
+      }
+    });
+
+    if(isAdding){
+      const addRow=document.createElement('div');
+      addRow.className='add-row';
+      const inp=document.createElement('input');
+      inp.className='add-input';
+      inp.id='addInp_'+si;
+      inp.placeholder='New task name...';
+      inp.maxLength=80;
+      const sv=document.createElement('button');
+      sv.className='add-save';
+      sv.textContent='Add';
+      const cn=document.createElement('button');
+      cn.className='add-cancel';
+      cn.textContent='Cancel';
+      sv.onclick=()=>{
+        const v=inp.value.trim();
+        if(!v)return;
+        sec.items.push({id:uid(),label:v,ts:null,isCustom:true});
+        addMode=null;save();renderToday();
+      };
+      cn.onclick=()=>{addMode=null;renderToday();};
+      inp.onkeydown=e=>{if(e.key==='Enter')sv.onclick();if(e.key==='Escape')cn.onclick();};
+      addRow.appendChild(inp);addRow.appendChild(sv);addRow.appendChild(cn);
+      card.appendChild(addRow);
+    }
+
+    wrap.appendChild(card);
+    area.appendChild(wrap);
+  });
+}
+
+function makeTimestampRow(item,tab,si,ii){
+  const el=document.createElement('div');
+  el.className='task-item tappable';
+  const sc=staleClass(item.ts,tab);
+  const dot=document.createElement('div');
+  dot.className='stale-dot '+sc;
+  const left=document.createElement('div');
+  left.className='task-left';
+  const lbl=document.createElement('div');
+  lbl.className='task-label';
+  lbl.textContent=item.label;
+  const ts=document.createElement('div');
+  ts.className='task-ts '+tsColorClass(item.ts,tab);
+  ts.textContent=tsLabel(item.ts);
+  left.appendChild(lbl);left.appendChild(ts);
+  el.appendChild(dot);el.appendChild(left);
+  el.onclick=()=>{
+    item.ts=Date.now();
+    el.classList.add('tapped');
+    setTimeout(()=>{save();renderToday();},280);
+  };
+  return el;
+}
+
+function makeEditModeRow(item,tab,si,ii){
+  const el=document.createElement('div');
+  el.className='task-item';
+  el.style.background='#FAFAF8';
+  const left=document.createElement('div');
+  left.className='task-left';
+  const lbl=document.createElement('div');
+  lbl.className='task-label';
+  lbl.textContent=item.label;
+  const ts=document.createElement('div');
+  ts.className='task-ts ts-ok';
+  ts.textContent=tsLabel(item.ts);
+  left.appendChild(lbl);left.appendChild(ts);
+
+  const ctrls=document.createElement('div');
+  ctrls.className='task-edit-controls';
+
+  const renBtn=document.createElement('button');
+  renBtn.className='task-rename-btn';
+  renBtn.title='Rename';
+  renBtn.innerHTML=`<svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
+  renBtn.onclick=e=>{
+    e.stopPropagation();
+    renameMode={tab:activeTab,secIdx:si,itemIdx:ii};
+    renderToday();
+    setTimeout(()=>{const i=document.getElementById('renInp_'+si+'_'+ii);if(i){i.focus();i.select();}},60);
+  };
+
+  const delBtn=document.createElement('button');
+  delBtn.className='task-delete-btn';
+  delBtn.title='Remove';
+  delBtn.innerHTML=`<svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
+  delBtn.onclick=e=>{
+    e.stopPropagation();
+    state.removedTasks.unshift({id:item.id,label:item.label,tab,sec:state.tasks[tab][si].sec,lastTs:item.ts,removedAt:Date.now(),isKid:false});
+    state.tasks[tab][si].items.splice(ii,1);
+    save();renderToday();
+  };
+
+  ctrls.appendChild(renBtn);ctrls.appendChild(delBtn);
+  el.appendChild(left);el.appendChild(ctrls);
+  return el;
+}
+
+function makeRenameRow(item,tab,si,ii){
+  const el=document.createElement('div');
+  el.className='rename-row';
+  const inp=document.createElement('input');
+  inp.className='rename-input';
+  inp.id='renInp_'+si+'_'+ii;
+  inp.value=item.label;
+  inp.maxLength=80;
+  const sv=document.createElement('button');
+  sv.className='rename-save';
+  sv.textContent='Save';
+  const cn=document.createElement('button');
+  cn.className='rename-cancel';
+  cn.textContent='Cancel';
+  sv.onclick=()=>{
+    const v=inp.value.trim();
+    if(v)item.label=v;
+    renameMode=null;save();renderToday();
+  };
+  cn.onclick=()=>{renameMode=null;renderToday();};
+  inp.onkeydown=e=>{if(e.key==='Enter')sv.onclick();if(e.key==='Escape')cn.onclick();};
+  el.appendChild(inp);el.appendChild(sv);el.appendChild(cn);
+  return el;
+}
+
+// ── KID TAB ──
+function renderKidTab(area){
+  const tasks=state.kidTasks[activeTab];
+  const isEditing=editMode&&editMode.tab===activeTab&&editMode.secIdx===-1;
+  const isAdding=addMode&&addMode.tab===activeTab&&addMode.secIdx===-1;
+
+  const wrap=document.createElement('div');
+  wrap.className='section';
+
+  const head=document.createElement('div');
+  head.className='sec-head';
+  const name=document.createElement('span');
+  name.className='sec-name';
+  name.textContent=TAB_LABELS[activeTab]+"'s tasks";
+
+  const acts=document.createElement('div');
+  acts.className='sec-actions';
+
+  if(tasks.length>0){
+    const editBtn=document.createElement('button');
+    editBtn.className='sec-edit-btn'+(isEditing?' active':'');
+    editBtn.textContent=isEditing?'Done editing':'Edit';
+    editBtn.onclick=()=>{
+      editMode=isEditing?null:{tab:activeTab,secIdx:-1};
+      addMode=null;renameMode=null;renderToday();
+    };
+    acts.appendChild(editBtn);
+  }
+
+  const addBtn=document.createElement('button');
+  addBtn.className='sec-add-btn';
+  addBtn.textContent='+';
+  addBtn.onclick=()=>{
+    addMode=isAdding?null:{tab:activeTab,secIdx:-1};
+    editMode=null;renameMode=null;renderToday();
+    setTimeout(()=>{const i=document.getElementById('kidAddInp');if(i)i.focus();},60);
+  };
+  acts.appendChild(addBtn);
+  head.appendChild(name);head.appendChild(acts);
+  wrap.appendChild(head);
+
+  if(tasks.length===0&&!isAdding){
+    const empty=document.createElement('div');
+    empty.className='kid-empty';
+    empty.innerHTML='<div class="kid-empty-icon">&#10003;</div><div class="kid-empty-text">All done! Tap + to add tasks.</div>';
+    wrap.appendChild(empty);
+  } else {
+    const card=document.createElement('div');
+    card.className='task-card';
+
+    tasks.forEach((item,idx)=>{
+      const isRenaming=renameMode&&renameMode.tab===activeTab&&renameMode.secIdx===-1&&renameMode.itemIdx===idx;
+      if(isRenaming){
+        const el=document.createElement('div');
+        el.className='rename-row';
+        const inp=document.createElement('input');
+        inp.className='rename-input';
+        inp.id='kidRenInp_'+idx;
+        inp.value=item.label;inp.maxLength=80;
+        const sv=document.createElement('button');sv.className='rename-save';sv.textContent='Save';
+        const cn=document.createElement('button');cn.className='rename-cancel';cn.textContent='Cancel';
+        sv.onclick=()=>{const v=inp.value.trim();if(v)item.label=v;renameMode=null;save();renderToday();};
+        cn.onclick=()=>{renameMode=null;renderToday();};
+        inp.onkeydown=e=>{if(e.key==='Enter')sv.onclick();if(e.key==='Escape')cn.onclick();};
+        el.appendChild(inp);el.appendChild(sv);el.appendChild(cn);
+        card.appendChild(el);
+      } else if(isEditing){
+        const el=document.createElement('div');
+        el.className='task-item';
+        el.style.background='#F6F9FE';
+        const lbl=document.createElement('span');
+        lbl.className='kid-label';
+        lbl.textContent=item.label;
+        const ctrls=document.createElement('div');
+        ctrls.className='task-edit-controls';
+        const renBtn=document.createElement('button');
+        renBtn.className='task-rename-btn';
+        renBtn.title='Rename';
+        renBtn.innerHTML=`<svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
+        renBtn.onclick=()=>{renameMode={tab:activeTab,secIdx:-1,itemIdx:idx};renderToday();setTimeout(()=>{const i=document.getElementById('kidRenInp_'+idx);if(i){i.focus();i.select();}},60);};
+        const delBtn=document.createElement('button');
+        delBtn.className='task-delete-btn';
+        delBtn.title='Remove';
+        delBtn.innerHTML=`<svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
+        delBtn.onclick=()=>{
+          state.removedTasks.unshift({id:item.id,label:item.label,tab:activeTab,sec:TAB_LABELS[activeTab],lastTs:null,removedAt:Date.now(),isKid:true});
+          state.kidTasks[activeTab].splice(idx,1);
+          save();renderToday();
+        };
+        ctrls.appendChild(renBtn);ctrls.appendChild(delBtn);
+        el.appendChild(lbl);el.appendChild(ctrls);
+        card.appendChild(el);
+      } else {
+        const el=document.createElement('div');
+        el.className='kid-item tappable';
+        const check=document.createElement('div');
+        check.className='kid-check';
+        check.innerHTML=`<svg viewBox="0 0 11 11"><polyline points="1.5,5.5 4.5,8.5 9.5,2"/></svg>`;
+        const lbl=document.createElement('span');
+        lbl.className='kid-label';
+        lbl.textContent=item.label;
+        el.appendChild(check);el.appendChild(lbl);
+        el.onclick=()=>{
+          el.classList.add('completing');
+          setTimeout(()=>{
+            state.kidHistory[activeTab].unshift({id:item.id,label:item.label,completedAt:Date.now()});
+            state.kidTasks[activeTab].splice(idx,1);
+            save();renderToday();
+          },380);
+        };
+        card.appendChild(el);
+      }
+    });
+
+    if(isAdding){
+      const addRow=document.createElement('div');
+      addRow.className='add-row';
+      const inp=document.createElement('input');
+      inp.className='add-input';
+      inp.id='kidAddInp';
+      inp.placeholder='New task...';
+      inp.maxLength=80;
+      const sv=document.createElement('button');sv.className='add-save';sv.textContent='Add';
+      const cn=document.createElement('button');cn.className='add-cancel';cn.textContent='Cancel';
+      sv.onclick=()=>{const v=inp.value.trim();if(!v)return;state.kidTasks[activeTab].push({id:uid(),label:v});addMode=null;save();renderToday();};
+      cn.onclick=()=>{addMode=null;renderToday();};
+      inp.onkeydown=e=>{if(e.key==='Enter')sv.onclick();if(e.key==='Escape')cn.onclick();};
+      addRow.appendChild(inp);addRow.appendChild(sv);addRow.appendChild(cn);
+      card.appendChild(addRow);
+    }
+
+    wrap.appendChild(card);
+  }
+
+  // add row when empty
+  if(tasks.length===0&&isAdding){
+    const card=document.createElement('div');
+    card.className='task-card';
+    const addRow=document.createElement('div');
+    addRow.className='add-row';
+    const inp=document.createElement('input');
+    inp.className='add-input';inp.id='kidAddInp';inp.placeholder='New task...';inp.maxLength=80;
+    const sv=document.createElement('button');sv.className='add-save';sv.textContent='Add';
+    const cn=document.createElement('button');cn.className='add-cancel';cn.textContent='Cancel';
+    sv.onclick=()=>{const v=inp.value.trim();if(!v)return;state.kidTasks[activeTab].push({id:uid(),label:v});addMode=null;save();renderToday();};
+    cn.onclick=()=>{addMode=null;renderToday();};
+    inp.onkeydown=e=>{if(e.key==='Enter')sv.onclick();if(e.key==='Escape')cn.onclick();};
+    addRow.appendChild(inp);addRow.appendChild(sv);addRow.appendChild(cn);
+    card.appendChild(addRow);
+    wrap.appendChild(card);
+  }
+
+  area.appendChild(wrap);
+
+  // recent completions
+  const hist=state.kidHistory[activeTab]||[];
+  if(hist.length>0&&!isEditing){
+    const hw=document.createElement('div');
+    hw.className='section';
+    const hh=document.createElement('div');
+    hh.className='sec-head';
+    const hn=document.createElement('span');
+    hn.className='sec-name';
+    hn.textContent='Recently completed';
+    hh.appendChild(hn);hw.appendChild(hh);
+    const hcard=document.createElement('div');
+    hcard.className='task-card';
+    hist.slice(0,8).forEach(h=>{
+      const row=document.createElement('div');
+      row.style.cssText='display:flex;align-items:baseline;justify-content:space-between;gap:8px;padding:10px 14px;border-bottom:1px solid var(--border)';
+      row.innerHTML=`<span style="font-size:14px;color:var(--text);flex:1">${h.label}</span><span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--faint);flex-shrink:0">${new Date(h.completedAt).toLocaleDateString('en-US',{month:'short',day:'numeric'})}</span>`;
+      hcard.appendChild(row);
+    });
+    if(hist.length>8){
+      const more=document.createElement('div');
+      more.style.cssText='padding:10px 14px;font-size:12px;color:var(--faint);text-align:center';
+      more.textContent='+' + (hist.length-8)+' more in Settings';
+      hcard.appendChild(more);
+    }
+    hw.appendChild(hcard);area.appendChild(hw);
+  }
+}
+
+// ── SETTINGS ──
+function renderSettings(){
+  const area=document.getElementById('pageSettings');
+  area.innerHTML='';
+
+  addGroup(area,'Data',[
+    {label:'Export backup',sub:'Save everything as a JSON file',action:'Export',onClick:doExport},
+    {label:'Import backup',sub:'Load a previously exported file',action:'Import',onClick:doImport}
+  ]);
+
+  addGroup(area,'Removed tasks',[
+    {label:'Task graveyard',sub:state.removedTasks.length+' removed tasks — restore any time',action:'View',onClick:showGraveyard}
+  ]);
+
+  KID_TABS.forEach(kid=>{
+    const hist=state.kidHistory[kid]||[];
+    addGroup(area,TAB_LABELS[kid]+"'s history",[
+      {label:hist.length+' completed tasks',sub:hist.length>0?'Last: '+new Date(hist[0].completedAt).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}):'None yet',action:'View',onClick:()=>showKidHistory(kid)},
+      {label:"Clear "+TAB_LABELS[kid]+"'s history",sub:'Cannot be undone',action:'Clear',danger:true,onClick:()=>showModal("Clear "+TAB_LABELS[kid]+"'s history?",'All completed task records will be deleted.',[{label:'Clear',cls:'danger',action:()=>{state.kidHistory[kid]=[];save();hideModal();renderSettings();}},{label:'Cancel',cls:'cancel',action:hideModal}])}
+    ]);
+  });
+
+  addGroup(area,'Danger zone',[
+    {label:'Clear all timestamps',sub:'Reset all last-done dates; keep tasks',action:'Clear',danger:true,onClick:()=>showModal('Clear all timestamps?','All last-done dates will be erased. Tasks stay.',[{label:'Clear timestamps',cls:'danger',action:()=>{Object.keys(state.tasks).forEach(tab=>state.tasks[tab].forEach(sec=>sec.items.forEach(item=>item.ts=null)));save();hideModal();renderSettings();}},{label:'Cancel',cls:'cancel',action:hideModal}])},
+    {label:'Factory reset',sub:'Delete everything and start fresh',action:'Reset',danger:true,onClick:()=>showModal('Factory reset?','Deletes all data including history and custom tasks.',[{label:'Reset everything',cls:'danger',action:()=>{state=defaultState();save();hideModal();renderSettings();renderToday();}},{label:'Cancel',cls:'cancel',action:hideModal}])}
+  ]);
+
+  const ver=document.createElement('div');
+  ver.className='version-note';
+  ver.textContent='Home Base v4.0';
+  area.appendChild(ver);
+}
+
+function addGroup(area,title,rows){
+  const g=document.createElement('div');g.className='settings-group';
+  const t=document.createElement('div');t.className='settings-group-title';t.textContent=title;
+  g.appendChild(t);
+  const card=document.createElement('div');card.className='settings-card';
+  rows.forEach(row=>{
+    const el=document.createElement('div');el.className='settings-row';
+    el.innerHTML=`<div><div class="settings-label${row.danger?' danger-label':''}">${row.label}</div><div class="settings-sub">${row.sub}</div></div><div class="settings-action${row.danger?' danger-action':''}">${row.action}</div>`;
+    el.onclick=row.onClick;
+    card.appendChild(el);
+  });
+  g.appendChild(card);area.appendChild(g);
+}
+
+// ── GRAVEYARD ──
+function showGraveyard(){
+  const box=document.getElementById('sheetBox');
+  box.innerHTML=`<div class="sheet-title">Removed tasks</div>`;
+  if(state.removedTasks.length===0){
+    box.innerHTML+=`<div style="text-align:center;padding:24px;color:var(--muted);font-size:14px">No removed tasks yet.</div>`;
+  } else {
+    const list=document.createElement('div');
+    list.className='hist-list';
+    state.removedTasks.slice(0,60).forEach((t,idx)=>{
+      const row=document.createElement('div');
+      row.className='hist-item';
+      const rd=new Date(t.removedAt).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+      const ld=t.lastTs?new Date(t.lastTs).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}):'never done';
+      row.innerHTML=`<div class="hist-top"><span class="hist-name">${t.label}</span><span class="hist-date">removed ${rd}</span></div><div class="hist-meta">${TAB_LABELS[t.tab]||t.tab} &mdash; ${t.sec} &mdash; last done: ${ld}</div>`;
+      const rb=document.createElement('button');
+      rb.className='restore-btn';
+      rb.textContent='↩ Restore this task';
+      rb.onclick=()=>{
+        if(t.isKid){
+          state.kidTasks[t.tab].push({id:t.id,label:t.label});
+        } else {
+          const secs=state.tasks[t.tab];
+          if(secs){const sec=secs.find(s=>s.sec===t.sec);if(sec)sec.items.push({id:t.id,label:t.label,ts:t.lastTs,isCustom:true});}
+        }
+        state.removedTasks.splice(idx,1);
+        save();closeSheet();renderToday();
+      };
+      row.appendChild(rb);
+      list.appendChild(row);
+    });
+    box.appendChild(list);
+  }
+  const cb=document.createElement('button');cb.className='sheet-btn cancel';cb.textContent='Close';cb.onclick=closeSheet;
+  box.appendChild(cb);
+  openSheet();
+}
+
+function showKidHistory(kid){
+  const box=document.getElementById('sheetBox');
+  const hist=state.kidHistory[kid]||[];
+  box.innerHTML=`<div class="sheet-title">${TAB_LABELS[kid]}'s completed tasks</div>`;
+  if(hist.length===0){
+    box.innerHTML+=`<div style="text-align:center;padding:24px;color:var(--muted);font-size:14px">No completed tasks yet.</div>`;
+  } else {
+    const list=document.createElement('div');list.className='hist-list';
+    hist.forEach(h=>{
+      const row=document.createElement('div');row.className='hist-item';
+      const d=new Date(h.completedAt).toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'});
+      row.innerHTML=`<div class="hist-top"><span class="hist-name">${h.label}</span><span class="hist-date">${d}</span></div>`;
+      list.appendChild(row);
+    });
+    box.appendChild(list);
+  }
+  const cb=document.createElement('button');cb.className='sheet-btn cancel';cb.textContent='Close';cb.onclick=closeSheet;
+  box.appendChild(cb);
+  openSheet();
+}
+
+function openSheet(){document.getElementById('sheetOverlay').classList.remove('hidden');document.getElementById('sheetOverlay').onclick=e=>{if(e.target===document.getElementById('sheetOverlay'))closeSheet();};}
+function closeSheet(){document.getElementById('sheetOverlay').classList.add('hidden');}
+
+// ── EXPORT / IMPORT ──
+function doExport(){
+  const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download='homebase-'+new Date().toISOString().slice(0,10)+'.json';a.click();
+  URL.revokeObjectURL(url);
+}
+function doImport(){
+  const inp=document.createElement('input');inp.type='file';inp.accept='.json,application/json';
+  inp.onchange=e=>{
+    const file=e.target.files[0];if(!file)return;
+    const reader=new FileReader();
+    reader.onload=ev=>{
+      try{
+        const imported=JSON.parse(ev.target.result);
+        showModal('Import backup?','This replaces all current data. Cannot be undone.',[
+          {label:'Replace all data',cls:'danger',action:()=>{state=imported;save();hideModal();renderSettings();renderToday();}},
+          {label:'Cancel',cls:'cancel',action:hideModal}
+        ]);
+      }catch(err){alert('Could not read file. Make sure it is a valid Home Base backup.');}
+    };
+    reader.readAsText(file);
+  };
+  inp.click();
+}
+
+// ── MODAL ──
+function showModal(title,sub,buttons){
+  const overlay=document.getElementById('modalOverlay'),sheet=document.getElementById('modalSheet');
+  overlay.classList.remove('hidden');
+  sheet.innerHTML=`<div class="modal-title">${title}</div><div class="modal-sub">${sub}</div>`;
+  buttons.forEach(b=>{const btn=document.createElement('button');btn.className='sheet-btn '+b.cls;btn.textContent=b.label;btn.onclick=b.action;sheet.appendChild(btn);});
+  overlay.onclick=e=>{if(e.target===overlay)hideModal();};
+}
+function hideModal(){document.getElementById('modalOverlay').classList.add('hidden');}
+
+// ── INIT ──
+renderToday();
+</script>
+</body>
+</html>
